@@ -1,0 +1,27 @@
+import java.util.ArrayList;
+
+public class Test {
+	public static void main (String[] arg) {
+		//creation de la classe permettant de decompresser le fichier .bin en parametre avec son fichier .txt associe
+		Decode fi = new Decode ("fichier_freq.txt","fichier_comp.bin");
+    
+		//creation de la liste pour stocker les feuilles contenant les caracteres, du futur arbre
+		ArrayList<Arbre> alphal = new ArrayList<Arbre>();
+    
+		//on insère dans la liste les feuilles
+		alphal=fi.lecturealpha();
+    
+		//creation du futur arbre final
+		Arbre alpha = new Arbre (null,0,null,null,null);
+    
+		//creation de l'arbre a partir des feuilles
+		alpha=fi.creationA(alphal);
+    
+		//pour l evaluation de la qualite de la compression on doit noter le code des caracteres dans l arbre
+		alpha=fi.encodageA(alpha);
+    
+		//lancement de la fonction permettant de decompresser le fichier a partir de l arbre et d evaluer la compression
+		fi.fdecomp(alpha);
+		
+	}
+}
