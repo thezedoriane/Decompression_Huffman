@@ -1,0 +1,48 @@
+public class Arbre {
+  //Chaque noeud est un arbre possèdant un caractère, le nombre d'occurence de ce dernier, un code composé de 0 et de 1 identifiant le caractère, 
+  //un fils gauche et un fils droit
+	private String car;
+	private int freq;
+	private String code;
+	private Arbre left_child, right_child;
+	public Arbre (String ca, int f, String c, Arbre lc, Arbre rc) {
+    //Si l'arbre n'est pas une feuille la valeur de car est null et celle de freq est 0
+		car=ca;
+		freq=f;
+		code=c;
+		left_child=lc;
+		right_child=rc;
+	}
+  //Pour le programme les getters et setters das attributs d'un arbre son nécessaire
+	public String getCar() {
+		return car;
+	}
+	public void setCar(String car) {
+		this.car=car;
+	}
+	public int getFreq() {
+		return freq;
+	}
+	public void setFreq(Integer freq) {
+		this.freq=freq;
+	}
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String code) {
+		this.code = code;
+	}
+	public Arbre getLeft_child() {
+		return left_child;
+	}
+	public void setLeft_child(Arbre left_child) {
+		this.left_child = left_child;
+	}
+	public Arbre getRight_child() {
+		return right_child;
+	}
+	public void setRight_child(Arbre right_child) {
+		this.right_child = right_child;
+	}
+	
+}
