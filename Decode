@@ -1,0 +1,298 @@
+import java.io.*;
+import java.nio.file.*;
+import java.util.ArrayList;
+
+public class Decode {
+	//Pour decompresser un fichier binaire avec la methode Huffman, il faut le nom des fichiers .bin et .txt
+  //Le fichier .bin etant le fichier compresse 
+  //Le fichier .txt content le nombre de caracteres differents, chaque caractere avec son occurrence, tries par odre croissant d'occurrence et selon leur code ascii
+	//Les fichiers doivent se trouver dans le dossier du nom du projet java (à la racine, pas dans des fichiers internes)
+	private String alphabet;
+	private String fcode;
+  
+	public Decode (String a, String fc) {
+		alphabet=a;
+		fcode=fc;
+	}
+	
+  
+	//Etape 1: Determination de l'alphabet et des frequences des caracteres
+  
+	public ArrayList<Arbre> lecturealpha() {
+		//Recupere un ArrayList contenant les arbres des caracteres et leur freq dans l'ordre de freq et ascii
+		ArrayList<Arbre> alpha =new ArrayList<Arbre>();
+		//On cree un chemin jusqu'au fichier
+		Path chemin = Paths.get(alphabet);
+        InputStream input = null;
+        try {
+        	//Ouverture du fichier 
+            input = Files.newInputStream(chemin);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            String s = reader.readLine();
+            //La premiere ligne indiquant le nombre de caractere n'est pas utile 
+            s = reader.readLine();
+            while(s != null){
+                //Substring lit de l'element indique jusqu'à la fin, 
+            	  //pour avoir que le 1er caractere il faut indique la fin de lecture
+                Arbre al = new Arbre(s.substring(0,1),Integer.parseInt(s.substring(2)),null,null,null);
+                alpha.add(al);
+                s = reader.readLine();
+            }
+            //Fermeture du fichier
+            input.close();
+ 
+        } catch (IOException e) {
+            System.out.println("Message " + e);
+        }
+        return alpha;
+	}
+	
+  
+	//Etape 2: Creation de l'arbre d'Huffman
+  
+	public ArrayList<Arbre> creationssA(ArrayList<Arbre> alpha) {
+		//A partir d'une liste d'arbre, renvoie la liste en ayant cree un arbre ayant pour fils les deux dont la frequence etait la plus basse 
+    //et dont la somme est la frequence du nouvel arbre
+    //les fils sont retires de la liste et le nouvel arbre est ajoute à sa fin
+		Arbre min1 = new Arbre(null,0,null,null,null);
+		Arbre min2 = new Arbre(null,0,null,null,null);
+		int t1 = -1;
+		int t2 = -1;
+		for (int i=0; i<alpha.size(); i++) {
+			//Lorsque l'on effetue un changement de min on change les valeurs de l'objet min 
+			if (alpha.get(i).getFreq()<min2.getFreq() || min2.getFreq()==0) {
+				if (alpha.get(i).getFreq()<min1.getFreq() || min1.getFreq()==0) {
+					min2.setFreq(min1.getFreq());
+					min2.setCar(min1.getCar());
+					min2.setLeft_child(min1.getLeft_child());
+					min2.setRight_child(min1.getRight_child());
+					min1.setFreq(alpha.get(i).getFreq());
+					min1.setCar(alpha.get(i).getCar());
+					min1.setLeft_child(alpha.get(i).getLeft_child());
+					min1.setRight_child(alpha.get(i).getRight_child());
+					t2=t1;
+					t1=i;
+				}
+				else {
+					min2.setFreq(alpha.get(i).getFreq());
+					min2.setCar(alpha.get(i).getCar());
+					min2.setLeft_child(alpha.get(i).getLeft_child());
+					min2.setRight_child(alpha.get(i).getRight_child());
+					t2=i;
+				}
+			}
+		}
+		Arbre t = new Arbre(null,min1.getFreq()+min1.getFreq(),null,min1,min2);
+		alpha.remove(t2);
+		alpha.remove(t1);
+		alpha.add(t);
+		return alpha;
+	}
+  
+  
+	public Arbre creationA(ArrayList<Arbre> alpha) {
+		//Renvoie l'arbre d'Huffman a partir de la liste des arbres contenant les caracteres, en utilisant creationssA
+		while (alpha.size()!=1) {
+			alpha=creationssA(alpha);
+		}
+		return alpha.get(0);
+	}
+  
+	
+	//Etape 3: Decodage du texte comprime
+  
+	public ArrayList<String> rechercheCar(Arbre alpha, String databin, int i) {
+		//En fonction de la suite de 0 et 1 contenu dans databin, retrouve le prochain caractere a partir du String a l indice i
+    //Renvoie un ArrayList de String contenant l'indice ou le programme a trouver le caractere, et ce dernier
+		String car = alpha.getCar();
+		ArrayList<String> liste = new ArrayList<String>();
+		if(car==null) {
+			if (databin.charAt(i)=='1') {
+				liste = rechercheCar(alpha.getRight_child(),databin,i+1);
+			}
+			if (databin.charAt(i)=='0') {
+				liste = rechercheCar(alpha.getLeft_child(),databin,i+1);
+			}
+		}
+		else {
+			String i2=String.valueOf(i);
+			liste.add(i2);
+			liste.add(car);
+		}
+		return liste;
+	}
+  
+  
+	public void fdecomp(Arbre alpha) {
+    //Methode principal du programme, utilisant les autres pour creer le fichier decompresser au format .txt, 
+    //et affichant dans la console la suite de 0 et 1 du fichier compresse, le taux de compression, 
+    //le nombre moyens de bits par caractere (en tenant compte du nombre d'occurence), et un message indiquant que le fichier a bien ete cree
+    
+		//On lit le fichier binaire et on recupere , si il n'est pas trouve on affiche une erreur
+		try{
+	 //On lit le fichier et on recupere les octets que l'on stocke dans le string databin
+	 File f = new File(fcode);
+	 FileInputStream data = new FileInputStream(f);
+	 String databin = new String();
+	 int octet=data.read();
+	 while (octet!=-1) {
+		 String stroctet=Integer.toBinaryString(octet);	
+		 databin= databin+stroctet;
+		 octet=data.read();
+	 }
+	 data.close();
+	 //On affiche sur la console la suite de 0 et 1 pour pouvoir verifier si elle correspond à ce qui va etre traduit
+	 System.out.println(databin);
+	 //On affiche ici le taux de compression et le nombre moyen de bits par caractere 
+	 //car on a la suite de 0 et 1 et l arbre alpha pour pouvoir evaluer
+	 System.out.println("Le taux de compression du fichier est de: "+txcompression(databin));
+	 System.out.println("La moyenne de bits de stockage d'un caractère est de: "+moy_bit(alpha));
+	 //On convertit la suite de 0 et de 1 en texte et on le stocke dans un String
+	 String texte = new String();
+	 ArrayList<String> CarI = new ArrayList<String>();
+	 int i = 0;
+	 //Tant que le String contenant la suite de 0 et 1 n a pas fini d etre lu, 
+	 //on continu de lire le caractere suivant et de le stocker 
+	 while (i<databin.length()-1) {
+		 CarI=rechercheCar(alpha,databin,i);
+		 texte= texte + CarI.get(1);
+		 i = Integer.parseInt(CarI.get(0));
+	} 
+	//On prend l'ancien nom du fichier .bin pour en faire un .txt
+	String nouveaufichier=fcode.substring(0,fcode.length()-4);
+	nouveaufichier+=".txt";
+	System.out.println(texte);
+	//On cree un nouveau fichier avec son nom et on ecrit le contenu du texte, 
+	//si il est déjà cree on ecrase les anciennes donnees et on ecrit
+	//ce fichier se situe avec les 2 autres sur le pc
+    try {
+        FileWriter fw = new FileWriter(nouveaufichier);
+        fw.write(texte);
+        fw.close();
+        System.out.println("Texte écrit!");
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+	 }
+	catch(IOException e){
+	 System.err.println(e.getMessage());
+	    }
+	}
+  
+  
+	//Etape 4: Determination du taux de compression
+  
+	public float txcompression(String txtcomp) {
+		//Renvoie le taux de compression avec le texte compresse (sous forme d'une suite de 0 et 1) et en cherchant le nombre de caractere total
+		float nbcar=0;
+		float taillec=txtcomp.length();
+		//on lit le fichier contenant les caracteres et leur occurence comme dans l'etape 1
+				Path chemin = Paths.get(alphabet);
+		        InputStream input = null;
+		        try { 
+		            input = Files.newInputStream(chemin);
+		             
+		            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+		            String s = reader.readLine();
+		            //La premiere ligne indiquant le nombre de caractère ne nous interesse pas 
+		            s = reader.readLine();
+		            while(s != null){
+		                //substring lit de l'élément indique jusqu'à la fin, pour avoir que le 1er caractere il faut indique la fin de lecture
+		            	  //on ajoute le nombre de fois qu'apparait chaque caractere
+		                nbcar+=Integer.parseInt(s.substring(2));
+		                s = reader.readLine();
+		            }
+		 
+		        } catch (IOException e) {
+		            System.out.println("Message " + e);
+		        }
+		float tx=1-taillec/(nbcar*8);
+		return tx;
+	}
+  
+  
+	//Etape 5: Determination du nombre moyen de bits de stockage d'un caractere du texte compresse
+  
+  public Arbre encodageA(Arbre alpha) {
+		//Attribue dans l'arbre de Huffman, des etiquettes aux feuilles afin d'obtenir le code du caractere
+		if (alpha.getCode()==null) {
+			//Il n'y a pas d'etiquette pour le noeud racine
+			alpha.setCode("");
+		}
+		if (alpha.getLeft_child()!=null) {
+			//Le fils gauche reprend le code de son pere et y ajoute un 0 à la fin, on encode ensuite ses fils
+			alpha.getLeft_child().setCode(alpha.getCode()+"0");
+			alpha.setLeft_child(encodageA(alpha.getLeft_child()));
+		}
+		if (alpha.getRight_child()!=null) {
+			//Le fils droit reprend le code de son pere et y ajoute un 1 à la fin, on encode ensuite ses fils
+			alpha.getRight_child().setCode(alpha.getCode()+"1");
+			alpha.setRight_child(encodageA(alpha.getRight_child()));
+		}
+		return alpha;
+	}
+  
+	public float code_car(Arbre alpha,String car) {
+        //Renvoie le nombre de bits sur lequel est code le caractere donne en parametre a partir de l'arbre d'Huffman
+				float nbb=0;
+				float rc=0;
+				float lc=0;
+				if (alpha.getCar()!=null && alpha.getCar().equals(car)) {
+						return alpha.getCode().length();
+					}
+				else {
+					if (alpha.getLeft_child()!=null) {
+						lc=code_car(alpha.getLeft_child(),car);
+					}
+					if (alpha.getRight_child()!=null) {
+						rc=code_car(alpha.getRight_child(),car);
+					}
+					if ((alpha.getLeft_child()==null && alpha.getRight_child()==null) || (lc==0 && rc==0)) {
+						nbb=0;
+					}
+					if (lc!=0) {
+						nbb=lc;
+					}
+					if (rc!=0) {
+						nbb=rc;
+					}
+				}
+				return nbb;
+
+			}
+      
+	public float moy_bit(Arbre alpha) {
+    //Renvoie le nombre moyen de bits pour code un caractere avec la methode Huffman
+    
+		//pour avoir la moyenne de bits on compte le nombre de caractere
+		float nbcar=0;
+		//et le nombre de bits sur lesquels sont codes chaque caractere, multiplie par leur frequence
+		float nbb_freq=0;
+		//pour avoir ses donnees on ouvre comme dans l'etape 1 le fichier contenant les caractères et leur occurence
+		Path chemin = Paths.get(alphabet);
+        InputStream input = null;
+        try {
+        	//ouverture du fichier 
+            input = Files.newInputStream(chemin);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            String s = reader.readLine();
+            //La premiere ligne indiquant le nombre de caractere different ne nous intéresse pas 
+            s = reader.readLine();
+            while(s != null){
+                //substring lit de l'element indique jusqu'à la fin, pour avoir que le 1er caractere il faut indique la fin de lecture
+            	  //on ajoute le nombre de fois qu'apparait chaque caractere
+                nbcar+=Integer.parseInt(s.substring(2));
+                //on ajoute le nombre de bits surlequel est code chaque caractere et on le multiplie par son nombre d'occurrence
+                nbb_freq+=code_car(alpha,s.substring(0,1))*Integer.parseInt(s.substring(2));;
+                s = reader.readLine();
+            }
+            //fermeture du fichier
+            input.close();
+ 
+        } catch (IOException e) {
+            System.out.println("Message " + e);
+        }
+		float moy=nbb_freq/nbcar;
+		return moy;
+	}
+}
