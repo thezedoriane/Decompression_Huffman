@@ -1,19 +1,19 @@
 public class Arbre {
-  //Chaque noeud est un arbre possèdant un caractère, le nombre d'occurence de ce dernier, un code composé de 0 et de 1 identifiant le caractère, 
+  //Chaque noeud est un arbre possedant un caractere, le nombre d'occurence de ce dernier, un code compose de 0 et de 1 identifiant le caractere, 
   //un fils gauche et un fils droit
 	private String car;
 	private int freq;
 	private String code;
 	private Arbre left_child, right_child;
 	public Arbre (String ca, int f, String c, Arbre lc, Arbre rc) {
-    //Si l'arbre n'est pas une feuille la valeur de car est null et celle de freq est 0
+        //Si l'arbre n'est pas une feuille la valeur de car est null et celle de freq est 0
 		car=ca;
 		freq=f;
 		code=c;
 		left_child=lc;
 		right_child=rc;
 	}
-  //Pour le programme les getters et setters das attributs d'un arbre son nécessaire
+  //Pour le programme les getters et setters das attributs d'un arbre son necessaire
 	public String getCar() {
 		return car;
 	}
