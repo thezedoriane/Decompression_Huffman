@@ -99,7 +99,7 @@ public class Decode {
 	}
   
 	
-	//Etape 3: Decodage du texte comprime
+	//Etape 3: Decodage du texte compresse
   
 	public ArrayList<String> rechercheCar(Arbre alpha, String databin, int i) {
 		//En fonction de la suite de 0 et 1 contenu dans databin, retrouve le prochain caractere a partir du String a l indice i
